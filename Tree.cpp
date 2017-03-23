@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stack>
 #include <queue>
+#include <math.h>
 using namespace std;
 
 #define END '#'
@@ -441,6 +442,35 @@ bool Is_Full_BinaryTree2(BtNode *ptr)
 	return Is_Full_BinaryTree(ptr->leftchild) && Is_Full_BinaryTree(ptr->rightchild);
 }
 
+//根据空洞判断(若为完全二叉树则null在层次遍历所有节点最后出现)
+bool Is_Comp_BinaryTree(BtNode *ptr)
+{
+	queue<BtNode *> que;
+	que.push(ptr);
+
+	//层次遍历，将NULL入队
+	while((ptr = que.front())!= NULL)
+	{
+		que.pop();
+		que.push(ptr->leftchild);
+		que.push(ptr->rightchild);
+	}
+
+	//判断是否还有未被访问到的节点  
+	while(!que.empty())
+	{
+		ptr = que.front();
+		que.pop();
+
+		//前面有空节点，不是完全二叉树
+		if(ptr != NULL)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 BtNode* Parent(BtNode  *ptr, BtNode *child)
 {
 	if (ptr == NULL || ptr->leftchild == child || ptr->rightchild == child)
@@ -464,13 +494,50 @@ BtNode* FindParent(BtNode *ptr, BtNode *child)
 	else
 		return Parent(ptr, child);
 }
-/*
-int PathMaxLenth(BtNode *ptr);
-bool Is_Full_BinaryTree(BtNode *p);
-bool Is_Comp_BinaryTree(BtNode *p);
-bool Is_Balance_BinaryTree(BtNode *p);
-BtNode * NearParent(BtNode *ptr, BtNode *child1,BtNode *child2);
-*/
+//求二叉树任一条最长路径，并输出结点
+void PathMaxLenth(BtNode *ptr)
+{
+	if(ptr != NULL)
+	{
+		cout<<ptr->data<<" ";
+		if(Depth(ptr->leftchild) > Depth(ptr->rightchild))
+		{
+			PathMaxLenth(ptr->leftchild);
+		}
+		else
+		{
+			PathMaxLenth(ptr->rightchild);
+		}
+	}
+}
+bool Is_Balance_BinaryTree(BtNode *p)
+{ 
+	bool res = false;
+	if(p != NULL)
+	{
+		if(abs(Depth(p->leftchild)-Depth(p->rightchild))<=1)
+		{
+			res = true;
+		}
+	}
+	return res;
+}
+
+//找最近的公共结点（普通二叉树）搜索二叉树&带有parent无root(hash逆向存储/链表的最后一个公共结点)的简单
+BtNode * NearParent(BtNode *ptr, BtNode *child1,BtNode *child2)
+{
+	if(ptr == NULL || child1 == NULL || child2 == NULL)
+		return NULL;
+	if(ptr == child1 || ptr == child2)
+		return ptr;
+
+	BtNode *left = NearParent(ptr->leftchild, child1, child2);
+	BtNode *right = NearParent(ptr->rightchild, child1, child2);
+	if(left && right)
+		return ptr;
+	return left ? left : right;
+}
+
 
 //打第K行的数据
 void Print_K_Level_Item(BtNode *ptr, int k)
@@ -531,60 +598,113 @@ void main()
 	//创建1
 	char *str = "ABC##DE##F##G#H##";
 	BinaryTree root = NULL;
+	/*
 	root = CreateTree1();
-	//CreateTree2(root);
-	//CreateTree3(&root);
-	//root = CreateTree4(str);
-	//root = CreateTree5(&str);
-
+	
+	CreateTree2(root);
+	CreateTree3(&root);
+	root = CreateTree4(str);
+	root = CreateTree5(&str);
+	*/
 	//创建2
 	char ps[] = {"ABCDEFGH"};
 	char is[] = {"CBEDFAGH"};
 	char ls[] = {"CEFDBHGA"};
 	int n = sizeof(is)/sizeof(is[0])-1;
- 
-	
-	//root = CreateTreePI(ps, is, n);
-	/*root = CreateTreeLI(is, ls, n);
+ 	
+	root = CreateTreePI(ps, is, n);
+	/*
+	root = CreateTreeLI(is, ls, n);
 
 	PreOrder(root); cout<<endl;
 	InOrder(root); cout<<endl;
 	PastOrder(root); cout<<endl;
-	*/
-	cout<<Is_Full_BinaryTree2(root)<<endl;;
+
 	NiceInOrder2(root); cout<<endl;
 	StkInOrder(root); cout<<endl;
 	NiceInOrder(root); cout<<endl;
+
 	StkPastOrder(root); cout<<endl;
 	NicePastOrder(root); cout<<endl;
+
 	StkPreOrder(root); cout<<endl;
 	NicePreOrder(root); cout<<endl;
+	
+	cout<<Is_Full_BinaryTree2(root)<<endl;
+	PathMaxLenth(root); cout<<endl;
+	cout<<Is_Balance_BinaryTree(root)<<endl;
+
+	BtNode *child1 = FindValue(root, 'G');
+	BtNode *child2 = FindValue(root, 'E');
+	BtNode *ancestor= NearParent(root, child1, child2);
+	if (ancestor != NULL)
+	{
+		cout<<ancestor->data<<endl;
+	}
+	
+	cout<<Is_Comp_BinaryTree(root)<<endl;
+	*/
 }
 
 
 #if 0
-//方二: left right
+void PreOrder(BtNode *ptr)
+{
+	if (ptr != NULL)
+	{
+		cout<<ptr->data<<" ";
+		PreOrder(ptr->leftchild);
+		PreOrder(ptr->rightchild);
+	}
+}
+void InOrder(BtNode *ptr)
+{
+	if (ptr != NULL)
+	{
+		InOrder(ptr->leftchild);
+		cout<<ptr->data<<" ";
+		InOrder(ptr->rightchild);
+	}
+}
+
+//根在中间
 //方一：注意mid两种用途
-BtNode *CreateTree(ElemType *ar, int len)
+BtNode *CreateTree(int *ar, int len)
 {
 	BtNode *s = NULL;
 	if (ar != NULL && len > 0)
 	{
 		int n = len/2;
-		BtNode *root = BuyNode(); 
-		root->data = ar[n]; //不能减1，会出现负数
-		root->leftchild = CreateTree(ar, n);
-		root->rightchild = CreateTree(ar+n+1, len-n-1);
+		s = BuyNode(); 
+		s->data = ar[n]; //不能减1，会出现负数
+		s->leftchild = CreateTree(ar, n);
+		s->rightchild = CreateTree(ar+n+1, len-n-1);
 	}
 	return s;
 }
-
+//方二: left right
+BtNode *CreateTree2(int *ar, int left, int right)
+{
+	BtNode *s = NULL;
+	if(ar != NULL && left <= right)
+	{
+		int mid = (right-left)/2+left;
+		s = BuyNode();
+		s->data = ar[mid];
+		s->leftchild = CreateTree2(ar, left, mid-1);
+		s->rightchild = CreateTree2(ar, mid+1, right);
+	}
+	return s;
+}
 void main()
 {
-	int ar = {12, 23, 34, 45, 56, 67, 78, 89, 90, 100};
+	int ar[] = {12, 23, 34, 45, 56, 67, 78, 89, 90, 100};
 	int n = sizeof(ar)/sizeof(ar[0]);
+
 	BinaryTree root = NULL;
-	root = CreateTree(ar, n);
+	
+	root = CreateTree2(ar, 0, n-1);
+	PreOrder(root);
 }
 
 //中序打印
@@ -627,10 +747,10 @@ void main()
 	cout << endl;
 	NicePrintInOrder(ar, 0, n );
 }
-
+#endif
 
 /*
-//自己写的,节点个数
+//节点个数
 static int _MySize(BtNode *ptr)
 {
 	if (ptr != NULL)
@@ -694,23 +814,3 @@ BtNode* FindValue(BtNode *ptr, ElemType x)
 }
 */
 
-//b+,b-,b*,红黑
-void main()
-{
-	BinaryTree root = CreateTree1();
-	InOrder(root);
-	cout<<endl;
-	PreOrder(root);
-	cout<<endl;
-	PastOrder(root);
-	cout<<endl;
-	cout<<Depth(root)<<endl;
-	int size = Size(root);
-	cout<<size<<endl;
-	BtNode *s = FindValue(root, 'C');
-	cout<<s<<endl;
-	//cout<<s->data<<endl;
-	BtNode *p = FindParent(root, FindValue(root, 'C'));
-	//cout<<p->data<<endl;
-}
-#endif
